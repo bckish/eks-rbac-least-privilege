@@ -1,21 +1,35 @@
 apiVersion: v1
 kind: Namespace
-metadata: { name: application }
+metadata:
+  name: policy-lab
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.34
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
 ---
 apiVersion: v1
 kind: ServiceAccount
-metadata: { name: deployer, namespace: application }
+metadata: { name: deployer, namespace: policy-lab }
+automountServiceAccountToken: false
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
-metadata: { name: deployer, namespace: application }
+metadata: { name: deployer, namespace: policy-lab }
 rules:
-  - apiGroups: ["", "apps"]
-    resources: ["pods", "services", "deployments", "replicasets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    resourceNames: ["demo-api"]
+    verbs: ["get", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
-metadata: { name: deployer, namespace: application }
-subjects: [{ kind: ServiceAccount, name: deployer, namespace: application }]
+metadata: { name: deployer, namespace: policy-lab }
+subjects: [{ kind: ServiceAccount, name: deployer, namespace: policy-lab }]
 roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: deployer }
